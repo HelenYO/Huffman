@@ -1,6 +1,3 @@
-//
-// Created by Елена on 03.10.18.
-//
 
 #ifndef HUFFMAN_ISTREAM_COVER_H
 #define HUFFMAN_ISTREAM_COVER_H
@@ -22,11 +19,11 @@ struct istream_cover {
 
     bool has_more();
 
-    void rewind();
+    void restart();
 
 private:
     std::array<byte_t, 1u << 16u> buffer{};
-    uint8_t bit_pos = 0;
+    uint8_t pos_in_byte = 0;
     size_t pos = 0;
     size_t size = 0;
     std::istream &istream;
