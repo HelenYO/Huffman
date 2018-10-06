@@ -40,7 +40,7 @@ std::vector<symbol> build_symbols_info(istream_cover &istream) {
     while (istream.has_more()) {
         ++symbols_info[istream.read_8_bits()].count;
     }
-    istream.rewind();
+    istream.restart();
     return symbols_info;
 }
 
