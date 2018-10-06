@@ -10,24 +10,23 @@
 #include <stdexcept>
 #include <limits>
 #include <cstring>
-
+#include <cstddef>
 #include "huffman.h"
 #include "istream_cover.h"
 #include "ostream_cover.h"
 
 
-typedef unsigned char byte_t;
-typedef uint64_t code_t;
+//typedef unsigned char unsigned char;
 
 constexpr size_t ALPHABET_SIZE = 256;
 
 struct symbol {
-    byte_t byte;
+    unsigned char byte;
     size_t count;
-    code_t code;
+    uint64_t code;
     uint8_t bits;
 
-    symbol(byte_t byte, size_t count, code_t code, uint8_t bits) : byte(byte), count(count), code(code),
+    symbol(unsigned char byte, size_t count, uint64_t code, uint8_t bits) : byte(byte), count(count), code(code),
                                                                    bits(bits) {}
 };
 
@@ -45,21 +44,21 @@ std::vector<symbol> build_symbols_info(istream_cover &istream) {
 }
 
 struct nodeEn {
-    byte_t byte = 0;
+    unsigned char byte = 0;
     size_t count = 0;
     std::shared_ptr<nodeEn> left = nullptr;
     std::shared_ptr<nodeEn> right = nullptr;
 
     nodeEn() = default;
 
-    nodeEn(byte_t byte, size_t count) : byte(byte), count(count) {}
+    nodeEn(unsigned char byte, size_t count) : byte(byte), count(count) {}
 
     nodeEn(nodeEn left, nodeEn right) : count(left.count + right.count),
                                         left(std::make_shared<nodeEn>(left)),
                                         right(std::make_shared<nodeEn>(right)) {}
 };
 
-void write_tree(nodeEn const &node, code_t code, uint8_t bits, std::vector<symbol> &symbols_info,
+void write_tree(nodeEn const &node, uint64_t code, uint8_t bits, std::vector<symbol> &symbols_info,
                 ostream_cover &ostream) {
     if (!node.left && !node.right) {
         ostream.write_bits(1, 1);
@@ -97,11 +96,11 @@ void make_tree(std::vector<symbol> &symbols_info, ostream_cover &ostream) {
 }
 
 struct nodeDe {
-    byte_t byte;
+    unsigned char byte;
     std::shared_ptr<nodeDe> left;
     std::shared_ptr<nodeDe> right;
 
-    explicit nodeDe(byte_t byte) : byte(byte), left(nullptr), right(nullptr) {}
+    explicit nodeDe(unsigned char byte) : byte(byte), left(nullptr), right(nullptr) {}
 
     nodeDe(nodeDe left, nodeDe right) : byte(0),
                                         left(std::make_shared<nodeDe>(left)),
@@ -127,25 +126,30 @@ void compress(std::istream &in, std::ostream &out) {
     if (file_size == 0) {
         return;
     }
-    char *tmpbytes = reinterpret_cast<char *>(&file_size);
+    //char *tmpbytes = reinterpret_cast<char *>(&file_size);
     char bytes[sizeof(size_t)];
-    std::strcpy(bytes, tmpbytes);
-    for (char byte : bytes) {
+    //std::strcpy(bytes, tmpbytes);
+    std::memcpy(bytes, &file_size, sizeof(size_t));
+    for (char &byte : bytes) {
         out.put(byte);
     }
+    //std::strcpy(tmpbytes, bytes);
     ostream_cover ostream(out);
     make_tree(symbols_info, ostream);
     while (istream.has_more()) {
-        byte_t byte = istream.read_8_bits();
+        unsigned char byte = istream.read_8_bits();
         ostream.write_bits(symbols_info[byte].code, symbols_info[byte].bits);
     }
+
 }
+//"-c" "/Users/elena/Desktop/Huffman/1m.file" "/Users/elena/Desktop/Huffman/fileOut.txt"
+//"-d" "/Users/elena/Desktop/Huffman/fileOut.txt" "/Users/elena/Desktop/Huffman/fileIn.txt"
 
 void decompress(std::istream &in, std::ostream &out) {
     size_t file_size = 0;
-    auto *tmpbytes = reinterpret_cast<char *>(&file_size);
+    //char *tmpbytes = reinterpret_cast<char *>(&file_size);
     char bytes[sizeof(size_t)];
-    std::strcpy(bytes, tmpbytes);
+    std::memcpy(bytes, &file_size, sizeof(size_t));
     for (char &byte : bytes) {
         int tmp = in.get();
         //if (tmp == std::char_traits<char>::eof()) {
@@ -155,7 +159,8 @@ void decompress(std::istream &in, std::ostream &out) {
             byte = static_cast<char>(tmp);
         }
     }
-    std::strcpy(tmpbytes, bytes);
+    //std::strcpy(tmpbytes, bytes);
+    std::memcpy(&file_size, bytes, sizeof(size_t));
     if (file_size == 0) {
         return;
     }
@@ -172,4 +177,5 @@ void decompress(std::istream &in, std::ostream &out) {
         }
         out.put(node->byte);
     }
+
 }
