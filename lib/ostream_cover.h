@@ -22,7 +22,7 @@ struct ostream_cover {
 private:
 
     std::array<byte_t, 1u << 16u> buffer{};
-    uint8_t bit_pos{};
+    uint8_t pos_in_byte{};
     size_t size{};
     std::ostream &ostream;
 
